@@ -1,0 +1,2592 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="artifact-type" content="tool">
+  <meta name="design-style" content="carbon">
+  <title>학생 AI 도구 만족도 예측 시뮬레이터</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@1.43.0/dist/umd/lucide.min.js"></script>
+  <style>
+    :root {
+      color-scheme: light;
+
+      /* Carbon palette */
+      --background: #ffffff;
+      --surface-container-low: #f4f4f4;
+      --surface-container: #f4f4f4;
+      --surface-container-high: #e0e0e0;
+
+      --on-surface: #161616;
+      --on-surface-variant: #525252;
+
+      --outline: #8d8d8d;
+      --outline-variant: #e0e0e0;
+
+      --primary: #0f62fe;
+      --primary-hover: #0353e9;
+      --on-primary: #ffffff;
+      --primary-container: #d0e2ff;
+      --on-primary-container: #161616;
+      --secondary: #6f6f6f;
+      --tertiary: #198038;
+      --tertiary-container: #defbe6;
+      --error: #da1e28;
+      --error-container: #fff1f1;
+      --on-error: #ffffff;
+
+      /* Semantic */
+      --positive: #198038;
+      --warning: #8e6a00;
+      --warning-container: #fcf4d6;
+      --focus: #0f62fe;
+
+      /* Data series */
+      --data-1: #0f62fe;
+      --data-2: #6929c4;
+      --data-3: #005d5d;
+      --data-4: #9f1853;
+      --data-context: #8d8d8d;
+
+      /* Fonts (Korean first for non-Latin legibility) */
+      --font-headline: 'Noto Sans KR', 'IBM Plex Sans', sans-serif;
+      --font-body: 'Noto Sans KR', 'IBM Plex Sans', sans-serif;
+      --font-label: 'IBM Plex Mono', 'Noto Sans KR', monospace;
+
+      /* Type scale (Focused Tool) */
+      --display-size: clamp(1.75rem, 1.4rem + 1.2vw, 2.25rem);
+      --headline-size: clamp(1.25rem, 1.1rem + 0.5vw, 1.5rem);
+      --subhead-size: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+      --body-size: clamp(0.9375rem, 0.9rem + 0.15vw, 1rem);
+      --label-size: 0.75rem;
+
+      /* Shape */
+      --rounded: 0.125rem;
+      --rounded-lg: 0.25rem;
+      --rounded-full: 0.75rem;
+
+      /* Effects */
+      --shadow-1: 0 2px 6px rgb(0 0 0 / 0.1);
+      --shadow-2: 0 4px 12px rgb(0 0 0 / 0.12);
+      --rule: 1px solid var(--outline-variant);
+      --field-rule: 1px solid var(--outline);
+      --indicator: 2px solid var(--primary);
+      --accent-bar: 3px solid var(--primary);
+      --positive-bar: 3px solid var(--positive);
+      --warning-bar: 3px solid var(--warning);
+      --error-bar: 3px solid var(--error);
+
+      /* Spacing scale (4pt base) */
+      --space-xs: 0.25rem;
+      --space-sm: 0.5rem;
+      --space-md: 1rem;
+      --space-lg: 1.5rem;
+      --space-xl: 2.5rem;
+      --space-2xl: 4rem;
+
+      /* Motion */
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+      --dur-micro: 120ms;
+      --dur-short: 220ms;
+      --dur-long: 420ms;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      overflow-x: clip;
+      margin: 0;
+      padding: 0;
+      background-color: var(--background);
+      color: var(--on-surface);
+      font-family: var(--font-body);
+      font-size: var(--body-size);
+      line-height: 1.55;
+      word-break: keep-all;
+      overflow-wrap: break-word;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    header { position: static !important; }
+
+    button, input, select, textarea {
+      font-family: inherit;
+      font-size: inherit;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .page-grid {
+      display: grid;
+      gap: var(--space-lg);
+      padding: var(--space-lg);
+      max-width: 1240px;
+      margin: 0 auto;
+    }
+    .page-grid * { min-width: 0; }
+
+    /* Header */
+    .site-header {
+      border-bottom: var(--rule);
+      padding-bottom: var(--space-lg);
+    }
+    .eyebrow {
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      color: var(--on-surface-variant);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: var(--space-sm);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      height: 1.5rem;
+      padding: 0 var(--space-sm);
+      border-radius: var(--rounded-full);
+      background-color: var(--primary-container);
+      color: var(--on-primary-container);
+      font-size: var(--label-size);
+      font-weight: 500;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+    .tag-neutral {
+      background-color: var(--surface-container-high);
+      color: var(--on-surface);
+    }
+    .tag-positive {
+      background-color: var(--tertiary-container);
+      color: var(--on-surface);
+    }
+    .tag-warning {
+      background-color: var(--warning-container);
+      color: var(--on-surface);
+    }
+
+    .headline {
+      font-family: var(--font-headline);
+      font-size: var(--display-size);
+      font-weight: 300;
+      line-height: 1.2;
+      margin: 0;
+      color: var(--on-surface);
+    }
+    .headline strong {
+      font-weight: 700;
+    }
+    .header-desc {
+      margin: var(--space-sm) 0 0;
+      color: var(--on-surface-variant);
+      max-width: 68ch;
+      font-size: var(--body-size);
+    }
+
+    /* KPI Strip */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-md);
+      margin-top: var(--space-lg);
+    }
+    .kpi-tile {
+      background-color: var(--surface-container);
+      padding: var(--space-md);
+      border-bottom: 2px solid var(--outline-variant);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+    .kpi-tile.is-key {
+      border-bottom: var(--indicator);
+    }
+    .mono-label {
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      color: var(--on-surface-variant);
+      letter-spacing: 0.04em;
+    }
+    .mono-label-en {
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      color: var(--on-surface-variant);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .kpi-value {
+      font-family: var(--font-label);
+      font-size: clamp(1.5rem, 1.2rem + 0.9vw, 2rem);
+      font-weight: 300;
+      line-height: 1.15;
+      color: var(--on-surface);
+      font-variant-numeric: tabular-nums;
+    }
+    .kpi-sub {
+      font-size: var(--label-size);
+      color: var(--on-surface-variant);
+    }
+
+    /* Two Main Model Hubs */
+    .hub-section {
+      display: grid;
+      gap: var(--space-md);
+    }
+    .section-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: var(--space-sm);
+      border-bottom: var(--rule);
+      padding-bottom: var(--space-sm);
+    }
+    .section-heading {
+      font-family: var(--font-headline);
+      font-size: var(--headline-size);
+      font-weight: 600;
+      margin: 0;
+      line-height: 1.25;
+    }
+    .hub-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-md);
+    }
+    .hub-card {
+      background-color: var(--surface-container);
+      padding: var(--space-lg);
+      border-top: 2px solid var(--outline-variant);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: var(--space-md);
+      transition: background-color var(--dur-micro) var(--ease-out), box-shadow var(--dur-micro) var(--ease-out);
+      position: relative;
+    }
+    .hub-card.is-active {
+      border-top: var(--indicator);
+      background-color: var(--surface-container);
+      box-shadow: inset 0 0 0 1px var(--primary);
+    }
+    .hub-card:hover {
+      background-color: var(--surface-container-high);
+    }
+    .hub-card.is-active:hover {
+      background-color: var(--surface-container);
+    }
+    .hub-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: var(--space-md);
+    }
+    .hub-title-btn {
+      background: none;
+      border: none;
+      padding: 0;
+      margin: 0;
+      text-align: left;
+      cursor: pointer;
+      color: var(--on-surface);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+      width: 100%;
+    }
+    .hub-title {
+      font-family: var(--font-headline);
+      font-size: var(--subhead-size);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+    .hub-desc {
+      font-size: var(--body-size);
+      color: var(--on-surface-variant);
+      margin: 0;
+    }
+    .hub-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-sm);
+      padding-top: var(--space-sm);
+      border-top: var(--rule);
+      transition: opacity var(--dur-micro) var(--ease-out);
+    }
+    .hub-action-btn {
+      min-height: 2.75rem;
+      padding: var(--space-xs) var(--space-md);
+      border: 1px solid var(--outline);
+      background-color: var(--background);
+      color: var(--on-surface);
+      font-size: var(--label-size);
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      border-radius: 0;
+      transition: background-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out);
+    }
+    .hub-action-btn:hover {
+      background-color: var(--primary-container);
+      color: var(--on-primary-container);
+    }
+    .hub-action-btn.is-current {
+      background-color: var(--primary);
+      color: var(--on-primary);
+      border-color: var(--primary);
+    }
+
+    /* Sub-navigation Tabs */
+    .workspace-shell {
+      display: grid;
+      gap: var(--space-lg);
+    }
+    .tab-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-md);
+      border-bottom: var(--rule);
+    }
+    .tab-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+    }
+    .tab-btn {
+      min-height: 2.75rem;
+      padding: var(--space-sm) var(--space-lg);
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--on-surface-variant);
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-sm);
+      transition: color var(--dur-micro) var(--ease-out), background-color var(--dur-micro) var(--ease-out);
+    }
+    .tab-btn:hover {
+      color: var(--on-surface);
+      background-color: var(--surface-container);
+    }
+    .tab-btn.is-active {
+      color: var(--on-surface);
+      font-weight: 600;
+      border-bottom: var(--indicator);
+    }
+    .active-model-pill {
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      color: var(--on-surface-variant);
+      padding: var(--space-xs) 0;
+    }
+
+    /* Panels & Layers */
+    .view-panel {
+      display: none;
+      animation: fadeSlide var(--dur-short) var(--ease-out);
+    }
+    .view-panel.is-visible {
+      display: grid;
+      gap: var(--space-lg);
+    }
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .grid-12 {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: var(--space-lg);
+      align-items: start;
+    }
+    .col-4 { grid-column: span 4; }
+    .col-5 { grid-column: span 5; }
+    .col-6 { grid-column: span 6; }
+    .col-7 { grid-column: span 7; }
+    .col-8 { grid-column: span 8; }
+    .col-12 { grid-column: span 12; }
+
+    .layer {
+      background-color: var(--surface-container);
+      padding: var(--space-lg);
+      border-radius: 0;
+    }
+    .layer .layer {
+      background-color: var(--surface-container-high);
+      padding: var(--space-md);
+    }
+    .layer-white {
+      background-color: var(--background);
+      border: var(--rule);
+      padding: var(--space-lg);
+    }
+
+    .callout {
+      background-color: var(--surface-container);
+      padding: var(--space-md);
+      border-left: var(--accent-bar);
+      display: flex;
+      gap: var(--space-sm);
+      align-items: flex-start;
+    }
+    .callout-positive { border-left: var(--positive-bar); }
+    .callout-warning { border-left: var(--warning-bar); }
+    .callout-error { border-left: var(--error-bar); }
+    .callout-body {
+      display: grid;
+      gap: var(--space-xs);
+    }
+    .callout-title {
+      font-weight: 600;
+      font-size: var(--body-size);
+      margin: 0;
+    }
+    .callout-text {
+      margin: 0;
+      color: var(--on-surface-variant);
+      font-size: var(--body-size);
+    }
+
+    .sub-heading {
+      font-family: var(--font-headline);
+      font-size: var(--subhead-size);
+      font-weight: 600;
+      margin: 0 0 var(--space-sm);
+    }
+    .prose {
+      max-width: 65ch;
+      margin: 0 0 var(--space-md);
+      color: var(--on-surface);
+    }
+    .prose-muted {
+      color: var(--on-surface-variant);
+      font-size: var(--body-size);
+      margin: 0;
+    }
+
+    .fact-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: var(--space-sm);
+    }
+    .fact-list li {
+      padding-top: var(--space-sm);
+      border-top: var(--rule);
+      display: grid;
+      gap: var(--space-xs);
+    }
+    .fact-list li:first-child {
+      border-top: none;
+      padding-top: 0;
+    }
+
+    /* Tables */
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      border-bottom: var(--rule);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--body-size);
+      text-align: left;
+    }
+    thead tr {
+      background-color: var(--surface-container-high);
+      border-bottom: 1px solid var(--outline);
+    }
+    th {
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      font-weight: 600;
+      color: var(--on-surface);
+      padding: var(--space-sm) var(--space-md);
+      white-space: nowrap;
+    }
+    td {
+      padding: var(--space-sm) var(--space-md);
+      border-top: var(--rule);
+      vertical-align: middle;
+    }
+    tbody tr:nth-child(even) {
+      background-color: var(--surface-container);
+    }
+    tbody tr.is-highlighted {
+      background-color: var(--primary-container);
+    }
+    .num {
+      text-align: right;
+      font-family: var(--font-label);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    /* Confusion Matrix */
+    .cm-grid {
+      display: grid;
+      grid-template-columns: auto repeat(2, minmax(0, 1fr));
+      gap: var(--space-xs);
+      margin-top: var(--space-md);
+    }
+    .cm-corner, .cm-col-head, .cm-row-head {
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      color: var(--on-surface-variant);
+      padding: var(--space-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    .cm-cell {
+      padding: var(--space-md);
+      background-color: var(--background);
+      border: var(--rule);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+    .cm-cell.is-correct {
+      border-left: var(--positive-bar);
+      background-color: var(--tertiary-container);
+    }
+    .cm-cell.is-error {
+      border-left: var(--error-bar);
+      background-color: var(--error-container);
+    }
+    .cm-val {
+      font-family: var(--font-label);
+      font-size: 1.5rem;
+      font-weight: 500;
+    }
+
+    /* Simulator Controls */
+    .control-stack {
+      display: grid;
+      gap: var(--space-md);
+    }
+    .field-group {
+      display: grid;
+      gap: var(--space-xs);
+    }
+    .field-label {
+      font-size: var(--label-size);
+      font-weight: 600;
+      color: var(--on-surface-variant);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .preset-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-xs);
+    }
+    .preset-btn {
+      min-height: 2.75rem;
+      padding: var(--space-xs) var(--space-sm);
+      background-color: var(--background);
+      border: 1px solid var(--outline);
+      color: var(--on-surface);
+      font-size: var(--label-size);
+      font-weight: 500;
+      text-align: left;
+      cursor: pointer;
+      transition: background-color var(--dur-micro) var(--ease-out);
+    }
+    .preset-btn:hover {
+      background-color: var(--surface-container-high);
+    }
+    .preset-btn.is-active {
+      background-color: var(--primary-container);
+      border-color: var(--primary);
+      font-weight: 600;
+    }
+
+    .segmented {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-xs);
+    }
+    .segmented-4 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-xs);
+    }
+    .seg-btn {
+      min-height: 2.75rem;
+      padding: var(--space-xs) var(--space-sm);
+      background-color: var(--background);
+      border: 1px solid var(--outline);
+      color: var(--on-surface);
+      font-size: var(--body-size);
+      cursor: pointer;
+      transition: background-color var(--dur-micro) var(--ease-out);
+    }
+    .seg-btn:hover {
+      background-color: var(--surface-container-high);
+    }
+    .seg-btn.is-active {
+      background-color: var(--primary);
+      color: var(--on-primary);
+      border-color: var(--primary);
+      font-weight: 600;
+    }
+
+    .range-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 4.5rem;
+      gap: var(--space-sm);
+      align-items: center;
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--primary);
+      height: 2.75rem;
+      cursor: pointer;
+    }
+    .num-input {
+      height: 2.5rem;
+      padding: 0 var(--space-sm);
+      background-color: var(--background);
+      border: none;
+      border-bottom: var(--field-rule);
+      font-family: var(--font-label);
+      text-align: right;
+      color: var(--on-surface);
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-sm);
+      align-items: end;
+      padding-top: var(--space-sm);
+    }
+    .btn-primary {
+      min-height: 3rem;
+      padding: var(--space-sm) var(--space-xl) var(--space-sm) var(--space-md);
+      background-color: var(--primary);
+      color: var(--on-primary);
+      border: none;
+      border-radius: 0;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-sm);
+      transition: background-color var(--dur-micro) var(--ease-out);
+    }
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+    .btn-secondary {
+      min-height: 3rem;
+      padding: var(--space-sm) var(--space-md);
+      background-color: transparent;
+      color: var(--primary);
+      border: 1px solid var(--primary);
+      border-radius: 0;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      transition: background-color var(--dur-micro) var(--ease-out);
+    }
+    .btn-secondary:hover {
+      background-color: var(--primary-container);
+      color: var(--on-primary-container);
+    }
+    .btn-danger-ghost {
+      min-height: 2.75rem;
+      padding: var(--space-xs) var(--space-md);
+      background-color: transparent;
+      color: var(--error);
+      border: 1px solid var(--error);
+      border-radius: 0;
+      font-size: var(--label-size);
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+    }
+    .btn-danger-ghost:hover {
+      background-color: var(--error-container);
+    }
+
+    /* Simulator Output */
+    .verdict-banner {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--space-md);
+      padding-bottom: var(--space-md);
+      border-bottom: var(--rule);
+    }
+    .prob-readout {
+      display: flex;
+      align-items: baseline;
+      gap: var(--space-md);
+      flex-wrap: wrap;
+    }
+    .prob-number {
+      font-family: var(--font-label);
+      font-size: clamp(2.25rem, 1.8rem + 1.5vw, 3rem);
+      font-weight: 300;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .verdict-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      padding: var(--space-xs) var(--space-md);
+      font-weight: 600;
+      font-size: var(--body-size);
+      border-left: var(--positive-bar);
+      background-color: var(--tertiary-container);
+      color: var(--on-surface);
+    }
+    .verdict-badge.is-general {
+      border-left: var(--warning-bar);
+      background-color: var(--warning-container);
+    }
+
+    /* Gauge & Charts */
+    .chart-box {
+      width: 100%;
+      min-height: 120px;
+    }
+    .chart-box-tall {
+      width: 100%;
+      min-height: 220px;
+    }
+    svg {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    /* Contribution breakdown bars */
+    .contrib-list {
+      display: grid;
+      gap: var(--space-sm);
+    }
+    .contrib-row {
+      display: grid;
+      grid-template-columns: 11rem minmax(0, 1fr) 5.5rem;
+      gap: var(--space-sm);
+      align-items: center;
+      padding: var(--space-xs) 0;
+      border-top: var(--rule);
+    }
+    .contrib-row:first-child {
+      border-top: none;
+    }
+    .contrib-track {
+      height: 1.25rem;
+      background-color: var(--surface-container);
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .contrib-midline {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background-color: var(--outline);
+    }
+    .contrib-bar {
+      position: absolute;
+      height: 0.75rem;
+      transition: width var(--dur-short) var(--ease-out), left var(--dur-short) var(--ease-out);
+    }
+    .contrib-bar.is-pos {
+      background-color: var(--data-1);
+    }
+    .contrib-bar.is-neg {
+      background-color: var(--data-4);
+    }
+    .contrib-bar.is-zero {
+      background-color: var(--data-context);
+    }
+
+    /* Decision Tree Visual Nodes */
+    .tree-diagram-wrap {
+      overflow-x: auto;
+      padding: var(--space-sm) 0;
+    }
+    .tree-grid {
+      min-width: 680px;
+      display: grid;
+      gap: var(--space-md);
+    }
+    .tree-node {
+      background-color: var(--background);
+      border: var(--rule);
+      padding: var(--space-sm) var(--space-md);
+      transition: background-color var(--dur-micro) var(--ease-out), box-shadow var(--dur-micro) var(--ease-out);
+    }
+    .tree-node.is-path {
+      border-color: var(--primary);
+      box-shadow: inset 3px 0 0 0 var(--primary);
+      background-color: var(--primary-container);
+    }
+    .tree-leaf {
+      background-color: var(--surface-container);
+      border: var(--rule);
+      padding: var(--space-sm) var(--space-md);
+      cursor: pointer;
+      text-align: left;
+      width: 100%;
+      display: grid;
+      gap: var(--space-xs);
+    }
+    .tree-leaf:hover {
+      background-color: var(--surface-container-high);
+    }
+    .tree-leaf.is-path {
+      background-color: var(--tertiary-container);
+      border-color: var(--positive);
+      box-shadow: inset 3px 0 0 0 var(--positive);
+    }
+    .tree-leaf.is-path.is-general-leaf {
+      background-color: var(--warning-container);
+      border-color: var(--warning);
+      box-shadow: inset 3px 0 0 0 var(--warning);
+    }
+
+    .tree-branches {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-md);
+    }
+    .tree-sub-branches {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-sm);
+      margin-top: var(--space-sm);
+    }
+    .branch-label {
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      color: var(--on-surface-variant);
+      margin-bottom: var(--space-xs);
+      display: block;
+    }
+
+    .path-steps {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-sm);
+    }
+    .path-step-card {
+      background-color: var(--surface-container);
+      padding: var(--space-md);
+      border-top: 2px solid var(--primary);
+      display: grid;
+      gap: var(--space-xs);
+    }
+    .path-step-card.is-final-high {
+      border-top-color: var(--positive);
+      background-color: var(--tertiary-container);
+    }
+    .path-step-card.is-final-general {
+      border-top-color: var(--warning);
+      background-color: var(--warning-container);
+    }
+
+    /* Footer */
+    .site-footer {
+      border-top: var(--rule);
+      padding-top: var(--space-lg);
+      margin-top: var(--space-xl);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--space-md);
+      color: var(--on-surface-variant);
+      font-size: var(--label-size);
+    }
+    .footer-source {
+      font-family: var(--font-label);
+      color: var(--on-surface);
+      font-weight: 500;
+    }
+
+    /* Container queries for component cards */
+    .card-wrapper { container-type: inline-size; }
+    @container (max-width: 460px) {
+      .contrib-row {
+        grid-template-columns: 1fr;
+        gap: var(--space-xs);
+      }
+      .preset-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Responsive mobile layout */
+    @media (max-width: 900px) {
+      .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .col-4, .col-5, .col-6, .col-7, .col-8 { grid-column: span 12; }
+      .path-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 640px) {
+      .page-grid {
+        grid-template-columns: 1fr;
+        padding: var(--space-md);
+        gap: var(--space-md);
+      }
+      .kpi-grid, .hub-grid, .path-steps {
+        grid-template-columns: 1fr;
+      }
+      .tab-btn {
+        padding: var(--space-sm) var(--space-md);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-grid">
+    <!-- Header -->
+    <header class="site-header">
+      <div class="eyebrow">
+        <span>GLOBAL AI TOOLS STUDENTS USE · N=330</span>
+        <span class="tag">이진 분류 예측 분석</span>
+        <span class="tag tag-neutral">층화 분할 80:20 (Train 264 / Test 66)</span>
+      </div>
+      <h1 class="headline">학생 AI 도구 <strong>만족도 예측 시뮬레이터</strong></h1>
+      <p class="header-desc">
+        전 세계 학생 330명의 AI 도구 활용 설문 데이터를 기반으로 구축한 로지스틱 회귀모델과 의사결정 나무(분류나무) 모델의 통계적 검증 결과 및 실시간 만족도 예측 시뮬레이터입니다.
+      </p>
+
+      <div class="kpi-grid">
+        <div class="kpi-tile">
+          <span class="mono-label">유효 표본 및 목표 변수</span>
+          <span class="kpi-value">330명</span>
+          <span class="kpi-sub">고만족(≥8.00점) 194명(59%) · 일반 136명(41%)</span>
+        </div>
+        <div class="kpi-tile">
+          <span class="mono-label">단순 기준선 (Baseline)</span>
+          <span class="kpi-value">59.1%</span>
+          <span class="kpi-sub">테스트 66명 전부 '고만족' 예측 시 정확도</span>
+        </div>
+        <div class="kpi-tile is-key">
+          <span class="mono-label">로지스틱 회귀 (최종 선정)</span>
+          <span class="kpi-value">65.2%</span>
+          <span class="kpi-sub">민감도 89.7% · 특이도 29.6% (기준선 +6.1%p)</span>
+        </div>
+        <div class="kpi-tile">
+          <span class="mono-label">의사결정 나무 (max_depth=3)</span>
+          <span class="kpi-value">54.5%</span>
+          <span class="kpi-sub">민감도 82.1% · 특이도 14.8% (탐색 보조)</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Two Main Model Hubs -->
+    <section class="hub-section" aria-label="예측 모델 허브 선택">
+      <div class="section-title-row">
+        <h2 class="section-heading">예측 모델 허브</h2>
+        <span class="mono-label">모델을 선택하고 설명서 · 검증 결과 · 시뮬레이터로 이동하세요</span>
+      </div>
+
+      <div class="hub-grid">
+        <!-- Hub 1: Logistic Regression -->
+        <article class="hub-card is-active" id="hub-logistic">
+          <button type="button" class="hub-title-btn" onclick="navigateTo('logistic', 'overview')" aria-pressed="true" id="hub-btn-logistic">
+            <span class="hub-title">
+              <span>01. 로지스틱 회귀모델</span>
+              <span class="tag tag-positive">최종 모델 선정</span>
+            </span>
+            <p class="hub-desc">
+              8개 입력 변수의 선형 결합을 시그모이드 확률로 변환하여 고만족 확률을 추정합니다. 테스트 정확도(65.2%), 민감도(89.7%), 특이도(29.6%) 모두 분류나무보다 높았습니다.
+            </p>
+          </button>
+          <div class="hub-actions">
+            <button type="button" class="hub-action-btn is-current" data-hub="logistic" data-view="overview" onclick="navigateTo('logistic', 'overview')">
+              <i data-lucide="book-open" style="width:16px;height:16px;" aria-hidden="true"></i>
+              <span>개요 및 설명서</span>
+            </button>
+            <button type="button" class="hub-action-btn" data-hub="logistic" data-view="validation" onclick="navigateTo('logistic', 'validation')">
+              <i data-lucide="bar-chart-2" style="width:16px;height:16px;" aria-hidden="true"></i>
+              <span>회귀모델 검증 결과</span>
+            </button>
+            <button type="button" class="hub-action-btn" data-hub="logistic" data-view="simulator" onclick="navigateTo('logistic', 'simulator')">
+              <i data-lucide="sliders" style="width:16px;height:16px;" aria-hidden="true"></i>
+              <span>시뮬레이터 실행</span>
+            </button>
+          </div>
+        </article>
+
+        <!-- Hub 2: Decision Tree -->
+        <article class="hub-card" id="hub-tree">
+          <button type="button" class="hub-title-btn" onclick="navigateTo('tree', 'overview')" aria-pressed="false" id="hub-btn-tree">
+            <span class="hub-title">
+              <span>02. 의사결정 나무모델</span>
+              <span class="tag tag-neutral">탐색 보조 (max_depth=3)</span>
+            </span>
+            <p class="hub-desc">
+              지니계수를 가장 크게 줄이는 조건을 순서대로 질문하여 3단계 규칙으로 학생을 분류합니다. 총 AI 활용 개수·대륙·학년·성별 조합 패턴을 직관적으로 확인합니다.
+            </p>
+          </button>
+          <div class="hub-actions">
+            <button type="button" class="hub-action-btn" data-hub="tree" data-view="overview" onclick="navigateTo('tree', 'overview')">
+              <i data-lucide="book-open" style="width:16px;height:16px;" aria-hidden="true"></i>
+              <span>개요 및 설명서</span>
+            </button>
+            <button type="button" class="hub-action-btn" data-hub="tree" data-view="validation" onclick="navigateTo('tree', 'validation')">
+              <i data-lucide="git-branch" style="width:16px;height:16px;" aria-hidden="true"></i>
+              <span>분류나무 검증 결과</span>
+            </button>
+            <button type="button" class="hub-action-btn" data-hub="tree" data-view="simulator" onclick="navigateTo('tree', 'simulator')">
+              <i data-lucide="play" style="width:16px;height:16px;" aria-hidden="true"></i>
+              <span>시뮬레이터 실행</span>
+            </button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Active Workspace Shell -->
+    <main class="workspace-shell">
+      <div class="tab-bar" role="tablist" aria-label="모델 상세 뷰 전환">
+        <div class="tab-list">
+          <button type="button" role="tab" class="tab-btn is-active" id="tab-overview" aria-selected="true" onclick="switchSubView('overview')">
+            <span>01. 개요 및 설명서</span>
+          </button>
+          <button type="button" role="tab" class="tab-btn" id="tab-validation" aria-selected="false" onclick="switchSubView('validation')">
+            <span id="tab-validation-label">02. 통계 검증 결과</span>
+          </button>
+          <button type="button" role="tab" class="tab-btn" id="tab-simulator" aria-selected="false" onclick="switchSubView('simulator')">
+            <span>03. 인터랙티브 시뮬레이터</span>
+          </button>
+        </div>
+        <div class="active-model-pill" id="active-model-indicator">현재 모델: 로지스틱 회귀모델</div>
+      </div>
+
+      <!-- =========================================================
+           LOGISTIC REGRESSION: 1. OVERVIEW
+           ========================================================= -->
+      <section id="panel-logistic-overview" class="view-panel is-visible" aria-label="로지스틱 회귀모델 설명서">
+        <div class="grid-12">
+          <div class="col-8 layer-white">
+            <h3 class="sub-heading">모델 개요 및 핵심 분석 결론</h3>
+            <p class="prose">
+              본 분석은 전 세계 학생 330명의 AI 도구 활용 설문 데이터에서 학생의 AI 도구 <strong>고만족 여부(평균 유용성 8.00점 이상)</strong>를 예측하기 위해 수행되었습니다. 선형회귀 분석에서 연속형 유용성 점수에 대한 결정계수(<span class="mono-label">R² = 0.0414</span>, 설명력 약 4.1%)가 매우 낮게 나타나, 확률 기반의 이진 분류 모델인 <strong>로지스틱 회귀</strong>를 주 예측 모형으로 구축했습니다.
+            </p>
+            <div class="callout callout-warning" style="margin-bottom: var(--space-md);">
+              <i data-lucide="alert-circle" style="width:20px;height:20px;flex-shrink:0;color:var(--warning);" aria-hidden="true"></i>
+              <div class="callout-body">
+                <p class="callout-title">핵심 결론: 현재 변수만으로는 만족 여부를 강하게 예측하기 어렵습니다</p>
+                <p class="callout-text">
+                  다른 변수를 통제한 다변량 로지스틱 모형에서는 통계적으로 유의한(p &lt; 0.05) 예측 요인이 확인되지 않았으며, 어떤 변수를 추가해도 기저 모형(AIC 359.93 / BIC 363.50)보다 적합도가 개선되지 않았습니다. 테스트 정확도 65.2%는 기준선(59.1%)보다 6.1%p 높은 수준으로, 본 연구는 <strong>사전 데이터 검증을 통해 무의미한 변수를 걸러내고 한계를 정직하게 확인한 점</strong>에 의의가 있습니다.
+                </p>
+              </div>
+            </div>
+
+            <h3 class="sub-heading">변수 설계 및 사전 데이터 검증</h3>
+            <ul class="fact-list">
+              <li>
+                <strong>유효 표본 정제 (N = 330)</strong>
+                <span class="prose-muted">중복·결측 응답 및 표본 수가 적어 통계적 불안정을 유발하는 소수 응답 범주를 정제하여 최종 330명을 확보했습니다. 층화 분할(80:20, <span class="mono-label">random_state=42</span>)로 학습 264명, 테스트 66명을 분리했습니다.</span>
+              </li>
+              <li>
+                <strong>목표 변수 및 파생 변수 정의</strong>
+                <span class="prose-muted">학생별 도구 유용성 점수 평균이 전체 중앙값 <strong>8.00점 이상</strong>이면 고만족(194명, 59%), 미만이면 일반(136명, 41%)으로 정의했습니다. <span class="mono-label">total_ai_used</span>는 8개 AI 도구 사용 여부를 합산한 파생 변수(중앙값 2.0개)입니다.</span>
+              </li>
+              <li>
+                <strong>학업 목적 변수(<span class="mono-label">uses_ai_for_study</span>) 제외</strong>
+                <span class="prose-muted">분석 전 분포 점검 단계에서 330명 전원이 <strong>True</strong>로 응답한 상수 변수임을 확인했습니다. 값이 한 종류뿐이라 만족 여부를 구분할 수 없어 모형에서 제외했습니다. (카이제곱 검정 χ²=0, p=1.0 / 미제외 시 나타난 오즈비 3.70은 무의미한 수치)</span>
+              </li>
+            </ul>
+          </div>
+
+          <aside class="col-4 layer">
+            <h3 class="sub-heading">사전 통계 검정 (EDA) 요약</h3>
+            <p class="prose-muted" style="margin-bottom: var(--space-md);">다변량 모형 투입 전, 개별 변수와 만족도 간의 관계를 단독 검정으로 확인했습니다.</p>
+            <ul class="fact-list">
+              <li>
+                <span class="mono-label">카이제곱 독립성 검정 · 성별</span>
+                <strong>p = 0.024 (단독 유의)</strong>
+                <span class="prose-muted">단독 검정에서는 성별에 따른 차이가 유의했으나, 다른 변수와 함께 투입한 로지스틱 모형에서는 p=0.156으로 비유의 처리되었습니다.</span>
+              </li>
+              <li>
+                <span class="mono-label">카이제곱 독립성 검정 · 다중 AI 사용</span>
+                <strong>p = 0.061 (경계 수준)</strong>
+                <span class="prose-muted">유의수준 0.05 기준을 소폭 초과하여 경계선 수준의 약한 단서로 해석합니다.</span>
+              </li>
+              <li>
+                <span class="mono-label">대륙권별 일원분산분석 (ANOVA)</span>
+                <strong>F = 0.956, p = 0.445</strong>
+                <span class="prose-muted">대륙권에 따른 유용성 점수 평균의 통계적으로 유의한 차이는 없었습니다.</span>
+              </li>
+              <li>
+                <span class="mono-label">선형회귀 설명력</span>
+                <strong>R² = 0.0414 (약 4.1%)</strong>
+                <span class="prose-muted">연속형 점수 예측력이 매우 낮아 확률 분류 모델(로지스틱·분류나무)로 전환했습니다.</span>
+              </li>
+            </ul>
+          </aside>
+        </div>
+      </section>
+
+      <!-- =========================================================
+           LOGISTIC REGRESSION: 2. VALIDATION RESULTS
+           ========================================================= -->
+      <section id="panel-logistic-validation" class="view-panel" aria-label="로지스틱 회귀모델 통계 검증 결과">
+        <div class="grid-12">
+          <!-- Coefficient & Odds Ratio Table -->
+          <div class="col-7 layer-white">
+            <div class="section-title-row" style="margin-bottom: var(--space-md);">
+              <h3 class="sub-heading" style="margin:0;">로지스틱 회귀 계수 및 오즈비(Odds Ratio) 검증표</h3>
+              <span class="tag tag-warning">8개 변수 모두 p &gt; 0.05 (비유의)</span>
+            </div>
+            <p class="prose-muted" style="margin-bottom: var(--space-md);">
+              모든 입력 변수의 p-value가 0.05보다 커 통계적으로 유의한 영향 요인이 없습니다. 따라서 오즈비(OR) 수치만으로 긍정·부정 방향을 단정적으로 해석할 수 없습니다.
+            </p>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>입력 변수 (Feature)</th>
+                    <th class="num">모수 추정치 (β)</th>
+                    <th class="num">오즈비 (OR)</th>
+                    <th class="num">p-value</th>
+                    <th>통계적 판정</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>절편 (Intercept)</strong> <span class="mono-label">기준 범주</span></td>
+                    <td class="num">-0.050</td>
+                    <td class="num">0.95</td>
+                    <td class="num">—</td>
+                    <td>기준 상태 (여성·저학년·아시아 등)</td>
+                  </tr>
+                  <tr>
+                    <td><strong>총 AI 활용 개수</strong> <span class="mono-label">total_ai_used</span></td>
+                    <td class="num">+0.080</td>
+                    <td class="num">1.08</td>
+                    <td class="num">0.148</td>
+                    <td><span class="tag tag-neutral">비유의 (최소 p-value)</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>성별 (남성 vs 여성)</strong> <span class="mono-label">gender</span></td>
+                    <td class="num">+0.340</td>
+                    <td class="num">1.40</td>
+                    <td class="num">0.156</td>
+                    <td><span class="tag tag-neutral">비유의 (단독 p=0.024)</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>학년 수준 (고학년 vs 저학년)</strong></td>
+                    <td class="num">+0.220</td>
+                    <td class="num">1.25</td>
+                    <td class="num">&gt; 0.05</td>
+                    <td><span class="tag tag-neutral">비유의</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>대륙: 북미</strong> <span class="mono-label">North America</span></td>
+                    <td class="num">-0.040</td>
+                    <td class="num">0.96</td>
+                    <td class="num">&gt; 0.05</td>
+                    <td><span class="tag tag-neutral">비유의 (ANOVA p=0.445)</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>대륙: 유럽</strong> <span class="mono-label">Europe</span></td>
+                    <td class="num">-0.220</td>
+                    <td class="num">0.80</td>
+                    <td class="num">&gt; 0.05</td>
+                    <td><span class="tag tag-neutral">비유의</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>대륙: 오세아니아</strong> <span class="mono-label">Oceania</span></td>
+                    <td class="num">-0.440</td>
+                    <td class="num">0.64</td>
+                    <td class="num">&gt; 0.05</td>
+                    <td><span class="tag tag-neutral">비유의</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>대륙: 기타 권역 (4개 더미 합산)</strong></td>
+                    <td class="num">0.000</td>
+                    <td class="num">1.00</td>
+                    <td class="num">&gt; 0.05</td>
+                    <td><span class="tag tag-neutral">비유의 (기준 범주)</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="callout" style="margin-top: var(--space-md);">
+              <i data-lucide="info" style="width:18px;height:18px;flex-shrink:0;color:var(--primary);" aria-hidden="true"></i>
+              <div class="callout-body">
+                <p class="callout-text">
+                  <strong>참고 (제외 변수 및 모수 기준):</strong> <span class="mono-label">uses_ai_for_study</span>는 330명 전원 True로 변별력이 없어 제외되었습니다(미제외 시 오즈비 3.70은 무의미한 수치). 위 표의 p=0.148, p=0.156 및 전원 비유의 판정은 실측 검증 결과이며, 시뮬레이터 모수(β, OR)는 테스트 셋 예측 확률 분포(0.38~0.76)와 표본 기준선(59.1%)에 맞춰 재구성된 계수입니다.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- AIC & BIC Comparison -->
+          <div class="col-5 layer-white">
+            <h3 class="sub-heading">모형 적합도 평가: AIC &amp; BIC 비교</h3>
+            <p class="prose-muted" style="margin-bottom: var(--space-md);">
+              정보량 기준(AIC·BIC)은 낮을수록 모형이 데이터를 간결하고 잘 설명함을 뜻합니다. 변수를 하나도 넣지 않은 기저 모형이 가장 낮았습니다.
+            </p>
+            <div class="table-wrap" style="margin-bottom: var(--space-md);">
+              <table>
+                <thead>
+                  <tr>
+                    <th>모형 구분</th>
+                    <th class="num">AIC</th>
+                    <th class="num">BIC</th>
+                    <th>평가</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="is-highlighted">
+                    <td><strong>기저 모형 (변수 0개)</strong></td>
+                    <td class="num"><strong>359.93</strong></td>
+                    <td class="num"><strong>363.50</strong></td>
+                    <td><span class="tag tag-positive">최저치 (최적)</span></td>
+                  </tr>
+                  <tr>
+                    <td>단일/부분 변수 추가 모형</td>
+                    <td class="num">&gt; 359.93</td>
+                    <td class="num">&gt; 363.50</td>
+                    <td>적합도 개선 없음</td>
+                  </tr>
+                  <tr>
+                    <td>전체 8변수 투입 모형</td>
+                    <td class="num">상승</td>
+                    <td class="num">상승</td>
+                    <td>복잡도 대비 개선 부족</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="chart-box" aria-label="AIC와 BIC 비교 차트">
+              <svg viewBox="0 0 420 155" role="img" aria-label="기저 모형 대비 변수 추가 시 AIC 및 BIC 증가 도표">
+                <text x="0" y="14" font-family="var(--font-label)" font-size="11" fill="var(--on-surface-variant)">LOWER IS BETTER · NULL MODEL VS FULL MODEL</text>
+                <!-- AIC Row -->
+                <text x="0" y="42" font-family="var(--font-body)" font-size="12" font-weight="600" fill="var(--on-surface)">기저 모형 AIC</text>
+                <rect x="110" y="29" width="215" height="18" fill="var(--data-1)"></rect>
+                <text x="332" y="43" font-family="var(--font-label)" font-size="12" font-weight="600" fill="var(--on-surface)">359.93</text>
+
+                <!-- BIC Row -->
+                <text x="0" y="72" font-family="var(--font-body)" font-size="12" font-weight="600" fill="var(--on-surface)">기저 모형 BIC</text>
+                <rect x="110" y="59" width="222" height="18" fill="var(--data-3)"></rect>
+                <text x="339" y="73" font-family="var(--font-label)" font-size="12" font-weight="600" fill="var(--on-surface)">363.50</text>
+
+                <!-- Variable Added Row -->
+                <text x="0" y="106" font-family="var(--font-body)" font-size="12" fill="var(--on-surface-variant)">변수 추가 모형</text>
+                <rect x="110" y="93" width="265" height="18" fill="var(--data-context)"></rect>
+                <text x="118" y="106" font-family="var(--font-label)" font-size="11" fill="var(--on-primary)">기저 모형 대비 수치 상승 (개선 실패)</text>
+
+                <line x1="110" y1="125" x2="395" y2="125" stroke="var(--outline-variant)" stroke-width="1"></line>
+                <text x="110" y="142" font-family="var(--font-label)" font-size="11" fill="var(--on-surface-variant)">결론: 어떤 변수를 넣어도 기저 모형보다 정보량 기준이 나빠짐</text>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Test Set Confusion Matrix & Metrics -->
+          <div class="col-6 layer-white">
+            <h3 class="sub-heading">테스트 셋(N=66) 오분류표</h3>
+            <p class="prose-muted">학습에 쓰지 않은 테스트 66명 기준 채점 결과입니다. ('고만족'을 양성으로 설정)</p>
+            <div class="cm-grid">
+              <div class="cm-corner">실제 \ 예측</div>
+              <div class="cm-col-head">예측: 고만족 (54명)</div>
+              <div class="cm-col-head">예측: 일반 (12명)</div>
+
+              <div class="cm-row-head">실제: 고만족 (39명)</div>
+              <div class="cm-cell is-correct">
+                <span class="mono-label-en">TP (정분류)</span>
+                <span class="cm-val">35명</span>
+              </div>
+              <div class="cm-cell is-error">
+                <span class="mono-label-en">FN (놓침)</span>
+                <span class="cm-val">4명</span>
+              </div>
+
+              <div class="cm-row-head">실제: 일반 (27명)</div>
+              <div class="cm-cell is-error">
+                <span class="mono-label-en">FP (오탐)</span>
+                <span class="cm-val">19명</span>
+              </div>
+              <div class="cm-cell is-correct">
+                <span class="mono-label-en">TN (정분류)</span>
+                <span class="cm-val">8명</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-6 layer-white">
+            <h3 class="sub-heading">성능 지표 비교 및 해석</h3>
+            <p class="prose-muted" style="margin-bottom: var(--space-md);">
+              예측 확률이 <span class="mono-label">0.38~0.76</span> 사이에 몰려 있어 66명 중 54명을 고만족으로 예측했습니다. 이로 인해 민감도는 높지만 일반 학생을 걸러내는 특이도는 낮습니다.
+            </p>
+            <div class="chart-box-tall">
+              <svg viewBox="0 0 460 195" role="img" aria-label="로지스틱 회귀와 분류나무의 정확도, 민감도, 특이도 비교 차트">
+                <text x="0" y="14" font-family="var(--font-label)" font-size="11" fill="var(--on-surface-variant)">TEST SET (N=66) · LOGISTIC VS TREE VS BASELINE (59.1%)</text>
+
+                <!-- Baseline reference line at 59.1% (x = 120 + 0.591 * 280 = 285.5) -->
+                <line x1="285" y1="24" x2="285" y2="170" stroke="var(--error)" stroke-width="1.5" stroke-dasharray="4 3"></line>
+                <text x="285" y="185" text-anchor="middle" font-family="var(--font-label)" font-size="10" fill="var(--error)">기준선 59.1%</text>
+
+                <!-- Accuracy -->
+                <text x="0" y="45" font-family="var(--font-body)" font-size="12" font-weight="600" fill="var(--on-surface)">정확도 (Accuracy)</text>
+                <rect x="120" y="29" width="182.5" height="12" fill="var(--data-1)"></rect>
+                <text x="308" y="39" font-family="var(--font-label)" font-size="11" fill="var(--on-surface)">65.2% (로지스틱 43/66)</text>
+                <rect x="120" y="44" width="152.6" height="12" fill="var(--data-context)"></rect>
+                <text x="278" y="54" font-family="var(--font-label)" font-size="11" fill="var(--on-surface-variant)">54.5% (분류나무 36/66)</text>
+
+                <!-- Sensitivity -->
+                <text x="0" y="95" font-family="var(--font-body)" font-size="12" font-weight="600" fill="var(--on-surface)">민감도 (Sensitivity)</text>
+                <rect x="120" y="79" width="251.2" height="12" fill="var(--data-1)"></rect>
+                <text x="377" y="89" font-family="var(--font-label)" font-size="11" fill="var(--on-surface)">89.7% (35/39)</text>
+                <rect x="120" y="94" width="229.9" height="12" fill="var(--data-context)"></rect>
+                <text x="356" y="104" font-family="var(--font-label)" font-size="11" fill="var(--on-surface-variant)">82.1% (32/39)</text>
+
+                <!-- Specificity -->
+                <text x="0" y="145" font-family="var(--font-body)" font-size="12" font-weight="600" fill="var(--on-surface)">특이도 (Specificity)</text>
+                <rect x="120" y="129" width="82.9" height="12" fill="var(--data-1)"></rect>
+                <text x="209" y="139" font-family="var(--font-label)" font-size="11" fill="var(--on-surface)">29.6% (8/27)</text>
+                <rect x="120" y="144" width="41.4" height="12" fill="var(--data-context)"></rect>
+                <text x="168" y="154" font-family="var(--font-label)" font-size="11" fill="var(--on-surface-variant)">14.8% (4/27)</text>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+           LOGISTIC REGRESSION: 3. INTERACTIVE SIMULATOR
+           ========================================================= -->
+      <section id="panel-logistic-simulator" class="view-panel" aria-label="로지스틱 회귀모델 인터랙티브 시뮬레이터">
+        <div class="grid-12">
+          <!-- Input Controls -->
+          <div class="col-4 layer card-wrapper">
+            <h3 class="sub-heading">입력 변수 설정</h3>
+            <div class="control-stack">
+              <div class="field-group">
+                <span class="field-label">대표 프로필 프리셋</span>
+                <div class="preset-grid">
+                  <button type="button" class="preset-btn is-active" data-preset="median" onclick="applyPreset('median')">중앙값 기본 표본</button>
+                  <button type="button" class="preset-btn" data-preset="na" onclick="applyPreset('na')">북미 대표 프로필</button>
+                  <button type="button" class="preset-btn" data-preset="eu" onclick="applyPreset('eu')">유럽 대표 프로필</button>
+                  <button type="button" class="preset-btn" data-preset="oc" onclick="applyPreset('oc')">오세아니아 대표 프로필</button>
+                </div>
+              </div>
+
+              <div class="field-group">
+                <span class="field-label">성별 (Gender)</span>
+                <div class="segmented">
+                  <button type="button" class="seg-btn is-active" data-input="gender" data-val="Female" onclick="setSimInput('gender', 'Female')">여성 (Female)</button>
+                  <button type="button" class="seg-btn" data-input="gender" data-val="Male" onclick="setSimInput('gender', 'Male')">남성 (Male)</button>
+                </div>
+              </div>
+
+              <div class="field-group">
+                <span class="field-label">대륙권 (Continent)</span>
+                <div class="segmented-4">
+                  <button type="button" class="seg-btn is-active" data-input="continent" data-val="North America" onclick="setSimInput('continent', 'North America')">북미</button>
+                  <button type="button" class="seg-btn" data-input="continent" data-val="Europe" onclick="setSimInput('continent', 'Europe')">유럽</button>
+                  <button type="button" class="seg-btn" data-input="continent" data-val="Oceania" onclick="setSimInput('continent', 'Oceania')">오세아니아</button>
+                  <button type="button" class="seg-btn" data-input="continent" data-val="Other" onclick="setSimInput('continent', 'Other')">아시아·기타</button>
+                </div>
+              </div>
+
+              <div class="field-group">
+                <span class="field-label">학년 수준 (Grade Level)</span>
+                <div class="segmented">
+                  <button type="button" class="seg-btn is-active" data-input="grade" data-val="Low" onclick="setSimInput('grade', 'Low')">저학년 (Low)</button>
+                  <button type="button" class="seg-btn" data-input="grade" data-val="High" onclick="setSimInput('grade', 'High')">고학년 (High)</button>
+                </div>
+              </div>
+
+              <div class="field-group">
+                <label class="field-label" for="log-slider-ai">
+                  <span>총 AI 도구 활용 개수 (0~8개)</span>
+                  <span class="mono-label">중앙값: 2.0개</span>
+                </label>
+                <div class="range-row">
+                  <input type="range" id="log-slider-ai" min="0" max="8" step="1" value="2" oninput="syncAiFromSlider(this.value)">
+                  <input type="number" id="log-num-ai" class="num-input" min="0" max="8" step="1" value="2" aria-label="총 AI 도구 활용 개수 숫자 입력" oninput="syncAiFromNumber(this.value)">
+                </div>
+              </div>
+
+              <div class="field-group">
+                <label class="field-label" for="log-slider-thresh">
+                  <span>분류 임계값 (Threshold)</span>
+                  <span class="mono-label">기본값: 0.50</span>
+                </label>
+                <div class="range-row">
+                  <input type="range" id="log-slider-thresh" min="0.30" max="0.80" step="0.01" value="0.50" oninput="syncThreshFromSlider(this.value)">
+                  <input type="number" id="log-num-thresh" class="num-input" min="0.30" max="0.80" step="0.01" value="0.50" aria-label="분류 임계값 숫자 입력" oninput="syncThreshFromNumber(this.value)">
+                </div>
+              </div>
+
+              <div class="btn-row">
+                <button type="button" class="btn-primary" onclick="executeSimulation('logistic')">
+                  <i data-lucide="play" style="width:16px;height:16px;" aria-hidden="true"></i>
+                  <span>만족도 예측 실행</span>
+                </button>
+                <button type="button" class="btn-secondary" onclick="applyPreset('median')">
+                  <span>초기화</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Output Display (Strictly NO linear predictor) -->
+          <div class="col-8 layer-white card-wrapper">
+            <div class="verdict-banner">
+              <div>
+                <span class="mono-label">고만족 예측 확률 및 임계값 판정</span>
+                <div class="prob-readout">
+                  <span class="prob-number" id="log-prob-text">51.7%</span>
+                  <span class="verdict-badge" id="log-verdict-badge">고만족 (1)</span>
+                </div>
+                <p class="prose-muted" id="log-threshold-compare" style="margin-top: var(--space-xs);">
+                  예측 확률 51.7% ≥ 설정 임계값 50.0% → 고만족 분류
+                </p>
+              </div>
+              <div class="layer" style="padding: var(--space-sm) var(--space-md);">
+                <span class="mono-label">적용 프로파일 요약</span>
+                <div id="log-profile-summary" style="font-weight:600;margin-top:2px;">여성 · 북미 · 저학년 · AI 2개</div>
+              </div>
+            </div>
+
+            <!-- Probability Gauge -->
+            <div style="margin-top: var(--space-lg);">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:var(--space-xs);">
+                <h4 class="sub-heading" style="margin:0;">고만족 예측 확률 게이지</h4>
+                <span class="mono-label">음영 구간: 실측 예측 분포 (38% ~ 76%)</span>
+              </div>
+              <div class="chart-box" style="min-height: 92px;">
+                <svg viewBox="0 0 600 84" role="img" aria-label="고만족 예측 확률 게이지 및 임계값 위치">
+                  <!-- Track -->
+                  <rect x="20" y="24" width="560" height="22" fill="var(--surface-container-high)"></rect>
+                  <!-- Empirical range band 38% to 76% -> x = 20 + 0.38*560 = 232.8 to 20 + 0.76*560 = 445.6 -->
+                  <rect x="232.8" y="24" width="212.8" height="22" fill="var(--primary-container)"></rect>
+                  <!-- Active probability bar -->
+                  <rect id="gauge-fill" x="20" y="28" width="290" height="14" fill="var(--data-1)"></rect>
+                  <!-- Threshold marker -->
+                  <line id="gauge-thresh-line" x1="300" y1="14" x2="300" y2="54" stroke="var(--error)" stroke-width="2"></line>
+                  <text id="gauge-thresh-label" x="300" y="10" text-anchor="middle" font-family="var(--font-label)" font-size="10" fill="var(--error)">임계값 50%</text>
+                  <!-- Axis ticks -->
+                  <text x="20" y="68" font-family="var(--font-label)" font-size="11" fill="var(--on-surface-variant)">0%</text>
+                  <text x="232.8" y="68" text-anchor="middle" font-family="var(--font-label)" font-size="10" fill="var(--on-surface-variant)">38%</text>
+                  <text x="300" y="68" text-anchor="middle" font-family="var(--font-label)" font-size="11" fill="var(--on-surface-variant)">50%</text>
+                  <text x="445.6" y="68" text-anchor="middle" font-family="var(--font-label)" font-size="10" fill="var(--on-surface-variant)">76%</text>
+                  <text x="580" y="68" text-anchor="end" font-family="var(--font-label)" font-size="11" fill="var(--on-surface-variant)">100%</text>
+                </svg>
+              </div>
+            </div>
+
+            <!-- Log-Odds Contribution Breakdown -->
+            <div style="margin-top: var(--space-lg);">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:var(--space-sm);flex-wrap:wrap;gap:var(--space-xs);">
+                <h4 class="sub-heading" style="margin:0;">변수별 로그오즈 기여도 분해 (영향 크기 순)</h4>
+                <span class="mono-label">기준 상태(절편) 대비 각 변수의 로그오즈 증감 기여</span>
+              </div>
+              <div class="contrib-list" id="log-contrib-list"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+           DECISION TREE: 1. OVERVIEW
+           ========================================================= -->
+      <section id="panel-tree-overview" class="view-panel" aria-label="의사결정 나무모델 설명서">
+        <div class="grid-12">
+          <div class="col-8 layer-white">
+            <h3 class="sub-heading">의사결정 나무(분류나무) 개요</h3>
+            <p class="prose">
+              분류나무는 스무고개처럼 데이터의 조건을 묻는 질문을 <strong>최대 3단계(max_depth=3)</strong>까지 차례대로 던져 학생을 <strong>고만족</strong> 또는 <strong>일반</strong> 그룹으로 분류하는 모델입니다. 각 단계에서는 한 집단 안에 고만족과 일반이 섞인 정도를 나타내는 <strong>지니계수(Gini Impurity)</strong>를 가장 크게 줄이는 변수를 우선 선택합니다.
+            </p>
+            <div class="callout" style="margin-bottom: var(--space-md);">
+              <i data-lucide="git-branch" style="width:20px;height:20px;flex-shrink:0;color:var(--primary);" aria-hidden="true"></i>
+              <div class="callout-body">
+                <p class="callout-title">탐색 보조 도구로서의 활용</p>
+                <p class="callout-text">
+                  테스트 셋(66명) 기준 정확도가 <strong>54.5%</strong>로 단순 기준선(59.1%)보다 낮아 최종 예측 모델로는 채택하지 않았습니다. 대신 학년, 총 AI 활용 개수, 대륙, 성별이 어떤 조건 조합으로 나뉘는지 직관적인 규칙으로 보여주는 <strong>탐색 보조 도구</strong>로 활용합니다.
+                </p>
+              </div>
+            </div>
+
+            <h3 class="sub-heading">핵심 개념 정리</h3>
+            <ul class="fact-list">
+              <li>
+                <strong>분류나무 vs 예측(회귀)나무</strong>
+                <span class="prose-muted">범주(고만족 / 일반)를 판정하면 <strong>분류나무</strong>, 연속형 숫자(점수)를 맞히면 예측(회귀)나무입니다. 본 연구에서는 8.00점 이상 여부를 구분하므로 분류나무를 사용했습니다.</span>
+              </li>
+              <li>
+                <strong>지니계수 (Gini Impurity) 계산</strong>
+                <span class="prose-muted"><span class="mono-label">Gini = 1 − (고만족 비율² + 일반 비율²)</span>으로 계산합니다. 50:50으로 완전히 섞이면 0.50, 90:10이면 0.18, 한 종류만 남으면 0.00이 됩니다.</span>
+              </li>
+              <li>
+                <strong>깊이 제한 (max_depth = 3)</strong>
+                <span class="prose-muted">질문이 너무 깊어지면 학습 데이터만 외우는 과적합이 발생하고 규칙 해석이 어려워지므로 최대 3단계로 제한했습니다.</span>
+              </li>
+            </ul>
+          </div>
+
+          <aside class="col-4 layer">
+            <h3 class="sub-heading">분류나무 해석 시 주의점</h3>
+            <ul class="fact-list">
+              <li>
+                <span class="mono-label">소표본 리프 주의</span>
+                <strong>일반화보다 데이터 내 패턴으로 해석</strong>
+                <span class="prose-muted">세 단계를 거쳐 나뉜 마지막 칸(리프)마다 인원이 적을 수 있으므로 보편 법칙보다는 330명 데이터 내부의 조건 패턴으로 이해해야 합니다.</span>
+              </li>
+              <li>
+                <span class="mono-label">유의성과의 차이</span>
+                <strong>중요도 ≠ 통계적 유의성</strong>
+                <span class="prose-muted">로지스틱 회귀에서는 모든 변수가 비유의였으나, 나무는 지니계수를 조금이라도 줄이면 분기에 활용하므로 변수 중요도가 산출됩니다.</span>
+              </li>
+              <li>
+                <span class="mono-label">사전 데이터 검증</span>
+                <strong>uses_ai_for_study 제외 동일 적용</strong>
+                <span class="prose-muted">330명 전원 True인 학업 목적 변수는 변별력이 없어 분류나무에서도 동일하게 제외되었습니다.</span>
+              </li>
+            </ul>
+          </aside>
+        </div>
+      </section>
+
+      <!-- =========================================================
+           DECISION TREE: 2. VALIDATION RESULTS
+           ========================================================= -->
+      <section id="panel-tree-validation" class="view-panel" aria-label="의사결정 나무모델 검증 결과">
+        <div class="grid-12">
+          <!-- Gini Split Rules Tree -->
+          <div class="col-12 layer-white">
+            <div class="section-title-row" style="margin-bottom: var(--space-md);">
+              <h3 class="sub-heading" style="margin:0;">지니계수 기반 3단계 분기 규칙 (max_depth=3)</h3>
+              <span class="mono-label">각 최종 칸을 클릭하면 해당 분기 경로가 강조됩니다</span>
+            </div>
+
+            <div class="tree-diagram-wrap">
+              <div class="tree-grid" id="val-tree-container">
+                <div class="tree-node is-path" id="vnode-root" style="max-width:340px;margin:0 auto;text-align:center;">
+                  <span class="mono-label">1단계 루트 분기 (최대 지니 감소)</span>
+                  <div style="font-weight:600;">총 AI 활용 개수 (total_ai_used)</div>
+                </div>
+
+                <div class="tree-branches">
+                  <!-- Left: <= 1 -->
+                  <div class="layer" style="padding:var(--space-md);">
+                    <span class="branch-label">조건 A: AI 도구 1개 이하 (≤ 1)</span>
+                    <div class="tree-node" id="vnode-left-d2">
+                      <span class="mono-label">2단계 분기</span>
+                      <div style="font-weight:600;">유럽(Europe) 여부</div>
+                    </div>
+                    <div class="tree-sub-branches">
+                      <div>
+                        <span class="branch-label">유럽 외</span>
+                        <button type="button" class="tree-leaf" data-leaf="L1" onclick="highlightValLeaf('L1')">
+                          <span class="mono-label">리프 1 (2단계 종료)</span>
+                          <strong>판정: 고만족</strong>
+                        </button>
+                      </div>
+                      <div>
+                        <span class="branch-label">유럽 (Europe)</span>
+                        <div class="tree-node" id="vnode-left-d3">
+                          <span class="mono-label">3단계: 성별</span>
+                          <div class="tree-sub-branches" style="margin-top:var(--space-xs);">
+                            <button type="button" class="tree-leaf" data-leaf="L2" onclick="highlightValLeaf('L2')">
+                              <span class="mono-label">남성</span>
+                              <strong>고만족</strong>
+                            </button>
+                            <button type="button" class="tree-leaf is-general-leaf" data-leaf="L3" onclick="highlightValLeaf('L3')">
+                              <span class="mono-label">여성</span>
+                              <strong>일반</strong>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Right: >= 2 -->
+                  <div class="layer" style="padding:var(--space-md);">
+                    <span class="branch-label">조건 B: AI 도구 2개 이상 (≥ 2)</span>
+                    <div class="tree-node" id="vnode-right-d2">
+                      <span class="mono-label">2단계 분기</span>
+                      <div style="font-weight:600;">북미(North America) 여부</div>
+                    </div>
+                    <div class="tree-sub-branches">
+                      <div>
+                        <span class="branch-label">북미 (North America)</span>
+                        <div class="tree-node" id="vnode-right-na-d3">
+                          <span class="mono-label">3단계: 학년 수준</span>
+                          <div class="tree-sub-branches" style="margin-top:var(--space-xs);">
+                            <button type="button" class="tree-leaf" data-leaf="R1" onclick="highlightValLeaf('R1')">
+                              <span class="mono-label">고학년</span>
+                              <strong>고만족</strong>
+                            </button>
+                            <button type="button" class="tree-leaf is-general-leaf" data-leaf="R2" onclick="highlightValLeaf('R2')">
+                              <span class="mono-label">저학년</span>
+                              <strong>일반</strong>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <span class="branch-label">북미 외</span>
+                        <div class="tree-node" id="vnode-right-other-d3">
+                          <span class="mono-label">3단계: 오세아니아 여부</span>
+                          <div class="tree-sub-branches" style="margin-top:var(--space-xs);">
+                            <button type="button" class="tree-leaf is-general-leaf" data-leaf="R3" onclick="highlightValLeaf('R3')">
+                              <span class="mono-label">오세아니아</span>
+                              <strong>일반</strong>
+                            </button>
+                            <button type="button" class="tree-leaf" data-leaf="R4" onclick="highlightValLeaf('R4')">
+                              <span class="mono-label">북미·오세아니아 외</span>
+                              <strong>고만족</strong>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="callout" style="margin-top: var(--space-md);" id="val-leaf-explain">
+              <i data-lucide="git-commit" style="width:18px;height:18px;flex-shrink:0;color:var(--primary);" aria-hidden="true"></i>
+              <div class="callout-body">
+                <p class="callout-text" id="val-leaf-text">위 트리에서 원하는 최종 판정 칸을 클릭하면 1~3단계 분기 경로가 하이라이트됩니다.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Variable Importance -->
+          <div class="col-6 layer-white">
+            <h3 class="sub-heading">변수 중요도 순위 (합계 100%)</h3>
+            <p class="prose-muted" style="margin-bottom: var(--space-md);">
+              각 변수가 지니계수를 줄이는 데 기여한 비율입니다. 상위 변수 간 격차가 크지 않아 예측 신호가 약하게 분산되어 있음을 보여줍니다.
+            </p>
+            <div class="chart-box-tall" style="margin-bottom: var(--space-md);">
+              <svg viewBox="0 0 440 195" role="img" aria-label="의사결정 나무 변수 중요도 순위 가로 막대 차트">
+                <text x="0" y="14" font-family="var(--font-label)" font-size="11" fill="var(--on-surface-variant)">GINI IMPORTANCE SHARE (%)</text>
+
+                <text x="0" y="42" font-family="var(--font-body)" font-size="12" font-weight="600" fill="var(--on-surface)">1. 학년 (저학년 여부)</text>
+                <rect x="155" y="29" width="210" height="16" fill="var(--data-1)"></rect>
+                <text x="373" y="42" font-family="var(--font-label)" font-size="12" fill="var(--on-surface)">23.35%</text>
+
+                <text x="0" y="70" font-family="var(--font-body)" font-size="12" font-weight="600" fill="var(--on-surface)">2. 총 AI 활용 개수</text>
+                <rect x="155" y="57" width="187" height="16" fill="var(--data-1)"></rect>
+                <text x="350" y="70" font-family="var(--font-label)" font-size="12" fill="var(--on-surface)">20.77%</text>
+
+                <text x="0" y="98" font-family="var(--font-body)" font-size="12" font-weight="600" fill="var(--on-surface)">3. 유럽 (Europe)</text>
+                <rect x="155" y="85" width="186" height="16" fill="var(--data-2)"></rect>
+                <text x="349" y="98" font-family="var(--font-label)" font-size="12" fill="var(--on-surface)">20.65%</text>
+
+                <text x="0" y="126" font-family="var(--font-body)" font-size="12" fill="var(--on-surface)">4. 북미 (North America)</text>
+                <rect x="155" y="113" width="157" height="16" fill="var(--data-3)"></rect>
+                <text x="320" y="126" font-family="var(--font-label)" font-size="12" fill="var(--on-surface)">17.44%</text>
+
+                <text x="0" y="154" font-family="var(--font-body)" font-size="12" fill="var(--on-surface)">5. 오세아니아 (Oceania)</text>
+                <rect x="155" y="141" width="124" height="16" fill="var(--data-3)"></rect>
+                <text x="287" y="154" font-family="var(--font-label)" font-size="12" fill="var(--on-surface)">13.73%</text>
+
+                <text x="0" y="182" font-family="var(--font-body)" font-size="12" fill="var(--on-surface-variant)">6. 성별 (Gender)</text>
+                <rect x="155" y="169" width="37" height="16" fill="var(--data-context)"></rect>
+                <text x="200" y="182" font-family="var(--font-label)" font-size="12" fill="var(--on-surface-variant)">4.07%</text>
+              </svg>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>순위</th>
+                    <th>변수</th>
+                    <th class="num">중요도 (%)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td class="num">1</td><td>학년 (저학년 여부)</td><td class="num">23.35%</td></tr>
+                  <tr><td class="num">2</td><td>총 AI 활용 개수</td><td class="num">20.77%</td></tr>
+                  <tr><td class="num">3</td><td>유럽 (Europe)</td><td class="num">20.65%</td></tr>
+                  <tr><td class="num">4</td><td>북미 (North America)</td><td class="num">17.44%</td></tr>
+                  <tr><td class="num">5</td><td>오세아니아 (Oceania)</td><td class="num">13.73%</td></tr>
+                  <tr><td class="num">6</td><td>성별 (Gender)</td><td class="num">4.07%</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Decision Tree Confusion Matrix -->
+          <div class="col-6 layer-white">
+            <h3 class="sub-heading">분류나무 테스트 셋(N=66) 오분류표 및 비교</h3>
+            <p class="prose-muted">
+              정확도 <strong>54.5%</strong>(36/66), 민감도 <strong>82.1%</strong>(32/39), 특이도 <strong>14.8%</strong>(4/27)로 기준선(59.1%)을 밑돌았습니다.
+            </p>
+            <div class="cm-grid">
+              <div class="cm-corner">실제 \ 예측</div>
+              <div class="cm-col-head">예측: 고만족 (55명)</div>
+              <div class="cm-col-head">예측: 일반 (11명)</div>
+
+              <div class="cm-row-head">실제: 고만족 (39명)</div>
+              <div class="cm-cell is-correct">
+                <span class="mono-label-en">TP (정분류)</span>
+                <span class="cm-val">32명</span>
+              </div>
+              <div class="cm-cell is-error">
+                <span class="mono-label-en">FN (놓침)</span>
+                <span class="cm-val">7명</span>
+              </div>
+
+              <div class="cm-row-head">실제: 일반 (27명)</div>
+              <div class="cm-cell is-error">
+                <span class="mono-label-en">FP (오탐)</span>
+                <span class="cm-val">23명</span>
+              </div>
+              <div class="cm-cell is-correct">
+                <span class="mono-label-en">TN (정분류)</span>
+                <span class="cm-val">4명</span>
+              </div>
+            </div>
+
+            <div class="callout callout-warning" style="margin-top: var(--space-md);">
+              <i data-lucide="scale" style="width:18px;height:18px;flex-shrink:0;color:var(--warning);" aria-hidden="true"></i>
+              <div class="callout-body">
+                <p class="callout-title">최종 모델 비교 결론</p>
+                <p class="callout-text">
+                  로지스틱 회귀가 정확도(65.2% vs 54.5%), 민감도(89.7% vs 82.1%), 특이도(29.6% vs 14.8%) 모두 높아 최종 모델로 선정되었습니다. 다만 테스트 66명 단일 분할 평가이므로 교차검증과 추가 행동 변수(사용 시간·유료 구독 여부) 수집이 향후 과제입니다.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+           DECISION TREE: 3. INTERACTIVE SIMULATOR
+           ========================================================= -->
+      <section id="panel-tree-simulator" class="view-panel" aria-label="의사결정 나무모델 시뮬레이터">
+        <div class="grid-12">
+          <!-- Synchronized Inputs -->
+          <div class="col-4 layer card-wrapper">
+            <h3 class="sub-heading">분류 규칙 입력 변수 설정</h3>
+            <div class="control-stack">
+              <div class="field-group">
+                <span class="field-label">대표 프로필 프리셋</span>
+                <div class="preset-grid">
+                  <button type="button" class="preset-btn is-active" data-preset="median" onclick="applyPreset('median')">중앙값 기본 표본</button>
+                  <button type="button" class="preset-btn" data-preset="na" onclick="applyPreset('na')">북미 대표 프로필</button>
+                  <button type="button" class="preset-btn" data-preset="eu" onclick="applyPreset('eu')">유럽 대표 프로필</button>
+                  <button type="button" class="preset-btn" data-preset="oc" onclick="applyPreset('oc')">오세아니아 대표 프로필</button>
+                </div>
+              </div>
+
+              <div class="field-group">
+                <span class="field-label">성별 (Gender)</span>
+                <div class="segmented">
+                  <button type="button" class="seg-btn is-active" data-input="gender" data-val="Female" onclick="setSimInput('gender', 'Female')">여성 (Female)</button>
+                  <button type="button" class="seg-btn" data-input="gender" data-val="Male" onclick="setSimInput('gender', 'Male')">남성 (Male)</button>
+                </div>
+              </div>
+
+              <div class="field-group">
+                <span class="field-label">대륙권 (Continent)</span>
+                <div class="segmented-4">
+                  <button type="button" class="seg-btn is-active" data-input="continent" data-val="North America" onclick="setSimInput('continent', 'North America')">북미</button>
+                  <button type="button" class="seg-btn" data-input="continent" data-val="Europe" onclick="setSimInput('continent', 'Europe')">유럽</button>
+                  <button type="button" class="seg-btn" data-input="continent" data-val="Oceania" onclick="setSimInput('continent', 'Oceania')">오세아니아</button>
+                  <button type="button" class="seg-btn" data-input="continent" data-val="Other" onclick="setSimInput('continent', 'Other')">아시아·기타</button>
+                </div>
+              </div>
+
+              <div class="field-group">
+                <span class="field-label">학년 수준 (Grade Level)</span>
+                <div class="segmented">
+                  <button type="button" class="seg-btn is-active" data-input="grade" data-val="Low" onclick="setSimInput('grade', 'Low')">저학년 (Low)</button>
+                  <button type="button" class="seg-btn" data-input="grade" data-val="High" onclick="setSimInput('grade', 'High')">고학년 (High)</button>
+                </div>
+              </div>
+
+              <div class="field-group">
+                <label class="field-label" for="tree-slider-ai">
+                  <span>총 AI 도구 활용 개수 (0~8개)</span>
+                  <span class="mono-label">분기 기준: ≤1 vs ≥2</span>
+                </label>
+                <div class="range-row">
+                  <input type="range" id="tree-slider-ai" min="0" max="8" step="1" value="2" oninput="syncAiFromSlider(this.value)">
+                  <input type="number" id="tree-num-ai" class="num-input" min="0" max="8" step="1" value="2" aria-label="분류나무 AI 도구 활용 개수 입력" oninput="syncAiFromNumber(this.value)">
+                </div>
+              </div>
+
+              <div class="btn-row">
+                <button type="button" class="btn-primary" onclick="executeSimulation('tree')">
+                  <i data-lucide="play" style="width:16px;height:16px;" aria-hidden="true"></i>
+                  <span>규칙 판정 실행</span>
+                </button>
+                <button type="button" class="btn-secondary" onclick="applyPreset('median')">
+                  <span>초기화</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Decision Tree Output & Live Path -->
+          <div class="col-8 layer-white card-wrapper">
+            <div class="verdict-banner">
+              <div>
+                <span class="mono-label">분류나무(max_depth=3) 최종 판정 결과</span>
+                <div class="prob-readout">
+                  <span class="verdict-badge" id="tree-verdict-badge" style="font-size:1.35rem;padding:var(--space-sm) var(--space-lg);">일반 (0)</span>
+                </div>
+                <p class="prose-muted" id="tree-rule-summary" style="margin-top: var(--space-xs);">
+                  적용 규칙: AI 2개 이상 → 북미 → 저학년 → 일반
+                </p>
+              </div>
+              <div class="layer" style="padding: var(--space-sm) var(--space-md);">
+                <span class="mono-label">로지스틱 모델과 비교</span>
+                <div id="tree-vs-logistic" style="font-weight:600;margin-top:2px;">로지스틱(51.7%): 고만족 · 불일치</div>
+              </div>
+            </div>
+
+            <div style="margin-top: var(--space-lg);">
+              <h4 class="sub-heading">실시간 3단계 분기 경로 추적</h4>
+              <div class="path-steps" id="tree-path-steps"></div>
+            </div>
+
+            <div class="callout" style="margin-top: var(--space-lg);">
+              <i data-lucide="info" style="width:18px;height:18px;flex-shrink:0;color:var(--primary);" aria-hidden="true"></i>
+              <div class="callout-body">
+                <p class="callout-text">
+                  분류나무는 경계 조건(예: AI 1개 vs 2개, 북미 저학년 vs 고학년)에 따라 판정이 계단식으로 바뀝니다. 테스트 정확도는 54.5%로 낮으므로 절대적 예측보다는 조건별 패턴 확인용으로 참고하세요.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+           SHARED EXECUTION LOGS
+           ========================================================= -->
+      <section class="layer-white" aria-label="시뮬레이션 실행 로그">
+        <div class="section-title-row" style="margin-bottom: var(--space-md);">
+          <div>
+            <h3 class="sub-heading" style="margin:0;">시뮬레이션 실행 로그</h3>
+            <span class="mono-label">예측 실행 버튼을 누른 결과가 기록되며 CSV로 추출할 수 있습니다</span>
+          </div>
+          <div style="display:flex;gap:var(--space-sm);flex-wrap:wrap;">
+            <button type="button" class="btn-secondary" style="min-height:2.75rem;" onclick="exportLogsCsv()">
+              <i data-lucide="download" style="width:16px;height:16px;" aria-hidden="true"></i>
+              <span>CSV 내보내기</span>
+            </button>
+            <button type="button" class="btn-danger-ghost" id="btn-clear-logs" onclick="clearExecutionLogs(this)">
+              <i data-lucide="trash-2" style="width:16px;height:16px;" aria-hidden="true"></i>
+              <span>로그 비우기</span>
+            </button>
+          </div>
+        </div>
+        <div id="logs-status-msg" class="mono-label" style="margin-bottom:var(--space-sm);color:var(--primary);"></div>
+        <div class="table-wrap" id="logs-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="num">#</th>
+                <th>실행 시각</th>
+                <th>모델</th>
+                <th>입력 프로파일</th>
+                <th class="num">임계값</th>
+                <th class="num">예측 확률</th>
+                <th>최종 분류</th>
+              </tr>
+            </thead>
+            <tbody id="logs-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <span class="footer-source">출처: Global AI Tools Students Use 데이터셋 (N=330)</span>
+      <span>로지스틱 회귀 및 지니계수 기반 분류나무(max_depth=3) 예측 분석 시뮬레이터</span>
+    </footer>
+  </div>
+
+  <api-shim></api-shim>
+  <script>
+    const MODEL_COEFFS = {
+      intercept: -0.050,
+      aiPerTool: 0.080,
+      male: 0.340,
+      highGrade: 0.220,
+      continent: {
+        'Other': 0.000,
+        'North America': -0.040,
+        'Europe': -0.220,
+        'Oceania': -0.440
+      }
+    };
+
+    const CONTINENT_LABELS = {
+      'North America': `북미`,
+      'Europe': `유럽`,
+      'Oceania': `오세아니아`,
+      'Other': `아시아·기타`
+    };
+
+    const LEAF_DETAILS = {
+      L1: {
+        nodes: ['vnode-root', 'vnode-left-d2'],
+        text: `1단계(총 AI 개수 ≤ 1) → 2단계(유럽 외) → 최종 판정: 고만족`
+      },
+      L2: {
+        nodes: ['vnode-root', 'vnode-left-d2', 'vnode-left-d3'],
+        text: `1단계(총 AI 개수 ≤ 1) → 2단계(유럽) → 3단계(남성) → 최종 판정: 고만족`
+      },
+      L3: {
+        nodes: ['vnode-root', 'vnode-left-d2', 'vnode-left-d3'],
+        text: `1단계(총 AI 개수 ≤ 1) → 2단계(유럽) → 3단계(여성) → 최종 판정: 일반`
+      },
+      R1: {
+        nodes: ['vnode-root', 'vnode-right-d2', 'vnode-right-na-d3'],
+        text: `1단계(총 AI 개수 ≥ 2) → 2단계(북미) → 3단계(고학년) → 최종 판정: 고만족`
+      },
+      R2: {
+        nodes: ['vnode-root', 'vnode-right-d2', 'vnode-right-na-d3'],
+        text: `1단계(총 AI 개수 ≥ 2) → 2단계(북미) → 3단계(저학년) → 최종 판정: 일반`
+      },
+      R3: {
+        nodes: ['vnode-root', 'vnode-right-d2', 'vnode-right-other-d3'],
+        text: `1단계(총 AI 개수 ≥ 2) → 2단계(북미 외) → 3단계(오세아니아) → 최종 판정: 일반`
+      },
+      R4: {
+        nodes: ['vnode-root', 'vnode-right-d2', 'vnode-right-other-d3'],
+        text: `1단계(총 AI 개수 ≥ 2) → 2단계(북미 외) → 3단계(북미·오세아니아 외) → 최종 판정: 고만족`
+      }
+    };
+
+    let appState = {
+      activeHub: 'logistic',
+      activeView: 'overview',
+      activePreset: 'median',
+      inputs: {
+        gender: 'Female',
+        continent: 'North America',
+        grade: 'Low',
+        aiCount: 2,
+        threshold: 0.50
+      },
+      logs: []
+    };
+
+    function clamp(val, min, max) {
+      return Math.min(max, Math.max(min, val));
+    }
+
+    function computeLogistic(inputs) {
+      const cAi = inputs.aiCount * MODEL_COEFFS.aiPerTool;
+      const cGender = inputs.gender === 'Male' ? MODEL_COEFFS.male : 0.0;
+      const cGrade = inputs.grade === 'High' ? MODEL_COEFFS.highGrade : 0.0;
+      const cCont = MODEL_COEFFS.continent[inputs.continent] !== undefined
+        ? MODEL_COEFFS.continent[inputs.continent]
+        : 0.0;
+
+      const z = MODEL_COEFFS.intercept + cAi + cGender + cGrade + cCont;
+      const prob = 1 / (1 + Math.exp(-z));
+      const isHigh = prob >= inputs.threshold;
+
+      const contributions = [
+        {
+          name: `총 AI 도구 개수 (${inputs.aiCount}개)`,
+          value: cAi,
+          detail: `개당 +0.080 (p=0.148)`
+        },
+        {
+          name: `대륙: ${CONTINENT_LABELS[inputs.continent]}`,
+          value: cCont,
+          detail: `기준 대비 차이 (비유의)`
+        },
+        {
+          name: `성별: ${inputs.gender === 'Male' ? '남성' : '여성'}`,
+          value: cGender,
+          detail: inputs.gender === 'Male' ? `남성 +0.340 (p=0.156)` : `여성 기준범주 (0.000)`
+        },
+        {
+          name: `학년: ${inputs.grade === 'High' ? '고학년' : '저학년'}`,
+          value: cGrade,
+          detail: inputs.grade === 'High' ? `고학년 +0.220 (비유의)` : `저학년 기준범주 (0.000)`
+        }
+      ].sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
+
+      return { prob, isHigh, contributions };
+    }
+
+    function computeDecisionTree(inputs) {
+      const steps = [];
+      let isHigh = true;
+
+      if (inputs.aiCount <= 1) {
+        steps.push({ step: `1단계 · 루트`, rule: `총 AI 개수 ≤ 1 (${inputs.aiCount}개)` });
+        if (inputs.continent !== 'Europe') {
+          steps.push({ step: `2단계 · 대륙`, rule: `유럽 외 (${CONTINENT_LABELS[inputs.continent]})` });
+          steps.push({ step: `3단계 · 종료`, rule: `추가 분기 없음 (리프 도달)` });
+          isHigh = true;
+        } else {
+          steps.push({ step: `2단계 · 대륙`, rule: `유럽 (Europe) 해당` });
+          if (inputs.gender === 'Male') {
+            steps.push({ step: `3단계 · 성별`, rule: `남성 (Male)` });
+            isHigh = true;
+          } else {
+            steps.push({ step: `3단계 · 성별`, rule: `여성 (Female)` });
+            isHigh = false;
+          }
+        }
+      } else {
+        steps.push({ step: `1단계 · 루트`, rule: `총 AI 개수 ≥ 2 (${inputs.aiCount}개)` });
+        if (inputs.continent === 'North America') {
+          steps.push({ step: `2단계 · 대륙`, rule: `북미 (North America) 해당` });
+          if (inputs.grade === 'High') {
+            steps.push({ step: `3단계 · 학년`, rule: `고학년 (High)` });
+            isHigh = true;
+          } else {
+            steps.push({ step: `3단계 · 학년`, rule: `저학년 (Low)` });
+            isHigh = false;
+          }
+        } else {
+          steps.push({ step: `2단계 · 대륙`, rule: `북미 외 (${CONTINENT_LABELS[inputs.continent]})` });
+          if (inputs.continent === 'Oceania') {
+            steps.push({ step: `3단계 · 권역`, rule: `오세아니아 (Oceania) 해당` });
+            isHigh = false;
+          } else {
+            steps.push({ step: `3단계 · 권역`, rule: `북미·오세아니아 외` });
+            isHigh = true;
+          }
+        }
+      }
+
+      steps.push({
+        step: `최종 판정`,
+        rule: isHigh ? `고만족 (1)` : `일반 (0)`,
+        isFinal: true,
+        isHigh
+      });
+
+      return { isHigh, steps };
+    }
+
+    function renderNavigation() {
+      const hubs = ['logistic', 'tree'];
+      hubs.forEach((h) => {
+        const card = document.getElementById(`hub-${h}`);
+        const btn = document.getElementById(`hub-btn-${h}`);
+        if (card) card.classList.toggle('is-active', appState.activeHub === h);
+        if (btn) btn.setAttribute('aria-pressed', String(appState.activeHub === h));
+      });
+
+      document.querySelectorAll('.hub-action-btn').forEach((b) => {
+        const match = b.dataset.hub === appState.activeHub && b.dataset.view === appState.activeView;
+        b.classList.toggle('is-current', match);
+      });
+
+      const views = ['overview', 'validation', 'simulator'];
+      views.forEach((v) => {
+        const tab = document.getElementById(`tab-${v}`);
+        if (tab) {
+          tab.classList.toggle('is-active', appState.activeView === v);
+          tab.setAttribute('aria-selected', String(appState.activeView === v));
+        }
+      });
+
+      const valLabel = document.getElementById('tab-validation-label');
+      if (valLabel) {
+        valLabel.textContent = appState.activeHub === 'logistic'
+          ? `02. 회귀모델 검증 결과`
+          : `02. 분류나무 검증 결과`;
+      }
+
+      const indicator = document.getElementById('active-model-indicator');
+      if (indicator) {
+        indicator.textContent = appState.activeHub === 'logistic'
+          ? `현재 모델: 로지스틱 회귀모델`
+          : `현재 모델: 의사결정 나무모델 (max_depth=3)`;
+      }
+
+      document.querySelectorAll('.view-panel').forEach((p) => p.classList.remove('is-visible'));
+      const activePanel = document.getElementById(`panel-${appState.activeHub}-${appState.activeView}`);
+      if (activePanel) activePanel.classList.add('is-visible');
+    }
+
+    function renderInputs() {
+      const { gender, continent, grade, aiCount, threshold } = appState.inputs;
+
+      document.querySelectorAll('[data-input="gender"]').forEach((b) => {
+        b.classList.toggle('is-active', b.dataset.val === gender);
+      });
+      document.querySelectorAll('[data-input="continent"]').forEach((b) => {
+        b.classList.toggle('is-active', b.dataset.val === continent);
+      });
+      document.querySelectorAll('[data-input="grade"]').forEach((b) => {
+        b.classList.toggle('is-active', b.dataset.val === grade);
+      });
+      document.querySelectorAll('.preset-btn').forEach((b) => {
+        b.classList.toggle('is-active', b.dataset.preset === appState.activePreset);
+      });
+
+      const logSliderAi = document.getElementById('log-slider-ai');
+      const logNumAi = document.getElementById('log-num-ai');
+      const treeSliderAi = document.getElementById('tree-slider-ai');
+      const treeNumAi = document.getElementById('tree-num-ai');
+      if (logSliderAi) logSliderAi.value = String(aiCount);
+      if (logNumAi) logNumAi.value = String(aiCount);
+      if (treeSliderAi) treeSliderAi.value = String(aiCount);
+      if (treeNumAi) treeNumAi.value = String(aiCount);
+
+      const logSliderThresh = document.getElementById('log-slider-thresh');
+      const logNumThresh = document.getElementById('log-num-thresh');
+      if (logSliderThresh) logSliderThresh.value = threshold.toFixed(2);
+      if (logNumThresh) logNumThresh.value = threshold.toFixed(2);
+    }
+
+    function renderSimulators() {
+      const inputs = appState.inputs;
+      const logRes = computeLogistic(inputs);
+      const treeRes = computeDecisionTree(inputs);
+
+      const probPct = (logRes.prob * 100).toFixed(1);
+      const threshPct = (inputs.threshold * 100).toFixed(1);
+      const profileText = `${inputs.gender === 'Male' ? '남성' : '여성'} · ${CONTINENT_LABELS[inputs.continent]} · ${inputs.grade === 'High' ? '고학년' : '저학년'} · AI ${inputs.aiCount}개`;
+
+      const probEl = document.getElementById('log-prob-text');
+      const badgeEl = document.getElementById('log-verdict-badge');
+      const cmpEl = document.getElementById('log-threshold-compare');
+      const sumEl = document.getElementById('log-profile-summary');
+
+      if (probEl) probEl.textContent = `${probPct}%`;
+      if (badgeEl) {
+        badgeEl.textContent = logRes.isHigh ? `고만족 (1)` : `일반 (0)`;
+        badgeEl.classList.toggle('is-general', !logRes.isHigh);
+      }
+      if (cmpEl) {
+        cmpEl.textContent = logRes.isHigh
+          ? `예측 확률 ${probPct}% ≥ 임계값 ${threshPct}% → 고만족 분류`
+          : `예측 확률 ${probPct}% < 임계값 ${threshPct}% → 일반 분류`;
+      }
+      if (sumEl) sumEl.textContent = profileText;
+
+      const gaugeFill = document.getElementById('gauge-fill');
+      const threshLine = document.getElementById('gauge-thresh-line');
+      const threshLabel = document.getElementById('gauge-thresh-label');
+      if (gaugeFill) {
+        gaugeFill.setAttribute('width', String((logRes.prob * 560).toFixed(1)));
+        gaugeFill.setAttribute('fill', logRes.isHigh ? 'var(--data-1)' : 'var(--warning)');
+      }
+      if (threshLine && threshLabel) {
+        const tx = (20 + inputs.threshold * 560).toFixed(1);
+        threshLine.setAttribute('x1', tx);
+        threshLine.setAttribute('x2', tx);
+        threshLabel.setAttribute('x', tx);
+        threshLabel.textContent = `임계값 ${Math.round(inputs.threshold * 100)}%`;
+      }
+
+      const contribList = document.getElementById('log-contrib-list');
+      if (contribList) {
+        const maxAbs = 0.65;
+        contribList.innerHTML = logRes.contributions.map((item) => {
+          const sign = item.value > 0 ? '+' : '';
+          const pct = Math.min(48, (Math.abs(item.value) / maxAbs) * 48);
+          let barClass = 'is-zero';
+          let leftPct = 50;
+          let widthPct = 2;
+          if (item.value > 0.001) {
+            barClass = 'is-pos';
+            leftPct = 50;
+            widthPct = pct;
+          } else if (item.value < -0.001) {
+            barClass = 'is-neg';
+            leftPct = 50 - pct;
+            widthPct = pct;
+          }
+          return `
+            <div class="contrib-row">
+              <div>
+                <div style="font-weight:600;font-size:var(--body-size);">${item.name}</div>
+                <div class="mono-label">${item.detail}</div>
+              </div>
+              <div class="contrib-track" aria-hidden="true">
+                <div class="contrib-midline"></div>
+                <div class="contrib-bar ${barClass}" style="left:${leftPct.toFixed(1)}%;width:${widthPct.toFixed(1)}%;"></div>
+              </div>
+              <div class="num" style="font-weight:600;">${sign}${item.value.toFixed(3)}</div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      /* Decision Tree Simulator Output */
+      const treeBadge = document.getElementById('tree-verdict-badge');
+      const treeRuleSum = document.getElementById('tree-rule-summary');
+      const treeVsLog = document.getElementById('tree-vs-logistic');
+      const treeStepsEl = document.getElementById('tree-path-steps');
+
+      if (treeBadge) {
+        treeBadge.textContent = treeRes.isHigh ? `고만족 (1)` : `일반 (0)`;
+        treeBadge.classList.toggle('is-general', !treeRes.isHigh);
+      }
+      if (treeRuleSum) {
+        treeRuleSum.textContent = `적용 경로: ${treeRes.steps.map((s) => s.rule).join(' → ')}`;
+      }
+      if (treeVsLog) {
+        const agree = treeRes.isHigh === logRes.isHigh ? `예측 일치` : `예측 불일치`;
+        treeVsLog.textContent = `로지스틱(${probPct}%: ${logRes.isHigh ? '고만족' : '일반'}) · ${agree}`;
+      }
+      if (treeStepsEl) {
+        treeStepsEl.innerHTML = treeRes.steps.map((s) => {
+          let cls = 'path-step-card';
+          if (s.isFinal) {
+            cls += s.isHigh ? ' is-final-high' : ' is-final-general';
+          }
+          return `
+            <div class="${cls}">
+              <span class="mono-label">${s.step}</span>
+              <strong style="font-size:var(--body-size);">${s.rule}</strong>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    function renderLogs() {
+      const tbody = document.getElementById('logs-tbody');
+      if (!tbody) return;
+      if (!appState.logs || appState.logs.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" style="text-align:center;color:var(--on-surface-variant);padding:var(--space-lg);">
+              아직 기록된 시뮬레이션 로그가 없습니다. 상단 시뮬레이터에서 '만족도 예측 실행' 버튼을 눌러 결과를 기록해 보세요.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = appState.logs.map((row, idx) => `
+        <tr>
+          <td class="num">${appState.logs.length - idx}</td>
+          <td class="mono-label">${row.time}</td>
+          <td>${row.model === 'logistic' ? '로지스틱 회귀' : '의사결정 나무'}</td>
+          <td>${row.profile}</td>
+          <td class="num">${row.threshold}</td>
+          <td class="num">${row.prob}</td>
+          <td><span class="tag ${row.isHigh ? 'tag-positive' : 'tag-warning'}">${row.verdict}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    async function persistState() {
+      if (window.notebookAppApi && typeof window.notebookAppApi.setAppState === 'function') {
+        try {
+          await window.notebookAppApi.setAppState(appState);
+        } catch (err) {
+          /* ignore transient persistence error */
+        }
+      }
+    }
+
+    function navigateTo(hub, view) {
+      appState.activeHub = hub;
+      appState.activeView = view;
+      renderNavigation();
+      persistState();
+    }
+
+    function switchSubView(view) {
+      appState.activeView = view;
+      renderNavigation();
+      persistState();
+    }
+
+    function applyPreset(presetKey) {
+      appState.activePreset = presetKey;
+      if (presetKey === 'median') {
+        appState.inputs = {
+          gender: 'Female',
+          continent: 'North America',
+          grade: 'Low',
+          aiCount: 2,
+          threshold: 0.50
+        };
+      } else if (presetKey === 'na') {
+        appState.inputs = {
+          gender: 'Male',
+          continent: 'North America',
+          grade: 'High',
+          aiCount: 3,
+          threshold: 0.50
+        };
+      } else if (presetKey === 'eu') {
+        appState.inputs = {
+          gender: 'Female',
+          continent: 'Europe',
+          grade: 'Low',
+          aiCount: 1,
+          threshold: 0.50
+        };
+      } else if (presetKey === 'oc') {
+        appState.inputs = {
+          gender: 'Female',
+          continent: 'Oceania',
+          grade: 'Low',
+          aiCount: 2,
+          threshold: 0.50
+        };
+      }
+      renderInputs();
+      renderSimulators();
+      persistState();
+    }
+
+    function setSimInput(key, value) {
+      appState.activePreset = 'custom';
+      appState.inputs[key] = value;
+      renderInputs();
+      renderSimulators();
+      persistState();
+    }
+
+    function syncAiFromSlider(val) {
+      const num = clamp(parseInt(val, 10) || 0, 0, 8);
+      appState.activePreset = 'custom';
+      appState.inputs.aiCount = num;
+      const logNum = document.getElementById('log-num-ai');
+      const treeNum = document.getElementById('tree-num-ai');
+      const logSli = document.getElementById('log-slider-ai');
+      const treeSli = document.getElementById('tree-slider-ai');
+      if (logNum) logNum.value = String(num);
+      if (treeNum) treeNum.value = String(num);
+      if (logSli) logSli.value = String(num);
+      if (treeSli) treeSli.value = String(num);
+      renderInputs();
+      renderSimulators();
+      persistState();
+    }
+
+    function syncAiFromNumber(val) {
+      const parsed = parseInt(val, 10);
+      if (isNaN(parsed)) return;
+      const num = clamp(parsed, 0, 8);
+      appState.activePreset = 'custom';
+      appState.inputs.aiCount = num;
+      const logSli = document.getElementById('log-slider-ai');
+      const treeSli = document.getElementById('tree-slider-ai');
+      if (logSli) logSli.value = String(num);
+      if (treeSli) treeSli.value = String(num);
+      renderSimulators();
+      persistState();
+    }
+
+    function syncThreshFromSlider(val) {
+      const num = clamp(parseFloat(val) || 0.5, 0.30, 0.80);
+      appState.inputs.threshold = num;
+      const numEl = document.getElementById('log-num-thresh');
+      if (numEl) numEl.value = num.toFixed(2);
+      renderSimulators();
+      persistState();
+    }
+
+    function syncThreshFromNumber(val) {
+      const parsed = parseFloat(val);
+      if (isNaN(parsed)) return;
+      const num = clamp(parsed, 0.30, 0.80);
+      appState.inputs.threshold = num;
+      const sliEl = document.getElementById('log-slider-thresh');
+      if (sliEl) sliEl.value = num.toFixed(2);
+      renderSimulators();
+      persistState();
+    }
+
+    function executeSimulation(modelType) {
+      const inputs = appState.inputs;
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+      const profileStr = `${inputs.gender === 'Male' ? '남성' : '여성'} / ${CONTINENT_LABELS[inputs.continent]} / ${inputs.grade === 'High' ? '고학년' : '저학년'} / AI ${inputs.aiCount}개`;
+
+      let entry;
+      if (modelType === 'logistic') {
+        const res = computeLogistic(inputs);
+        entry = {
+          time: timeStr,
+          model: 'logistic',
+          profile: profileStr,
+          threshold: `${(inputs.threshold * 100).toFixed(0)}%`,
+          prob: `${(res.prob * 100).toFixed(1)}%`,
+          isHigh: res.isHigh,
+          verdict: res.isHigh ? `고만족 (1)` : `일반 (0)`
+        };
+      } else {
+        const res = computeDecisionTree(inputs);
+        entry = {
+          time: timeStr,
+          model: 'tree',
+          profile: profileStr,
+          threshold: `규칙 분기`,
+          prob: `—`,
+          isHigh: res.isHigh,
+          verdict: res.isHigh ? `고만족 (1)` : `일반 (0)`
+        };
+      }
+
+      appState.logs.unshift(entry);
+      if (appState.logs.length > 30) appState.logs.pop();
+
+      const msgEl = document.getElementById('logs-status-msg');
+      if (msgEl) {
+        msgEl.textContent = `최근 기록 추가됨 (${entry.time}) · ${entry.model === 'logistic' ? '로지스틱 회귀' : '의사결정 나무'}: ${entry.verdict}`;
+      }
+
+      renderLogs();
+      persistState();
+    }
+
+    function clearExecutionLogs(btn) {
+      if (!btn) return;
+      if (btn.dataset.armed !== 'true') {
+        btn.dataset.armed = 'true';
+        btn.textContent = `한 번 더 클릭하여 초기화`;
+        return;
+      }
+      btn.dataset.armed = 'false';
+      btn.innerHTML = `<i data-lucide="trash-2" style="width:16px;height:16px;" aria-hidden="true"></i><span>로그 비우기</span>`;
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+      appState.logs = [];
+      const msgEl = document.getElementById('logs-status-msg');
+      if (msgEl) msgEl.textContent = `시뮬레이션 로그가 초기화되었습니다.`;
+      renderLogs();
+      persistState();
+    }
+
+    function exportLogsCsv() {
+      const msgEl = document.getElementById('logs-status-msg');
+      if (!appState.logs || appState.logs.length === 0) {
+        if (msgEl) msgEl.textContent = `내보낼 로그가 없습니다. 먼저 시뮬레이션을 실행해 주세요.`;
+        return;
+      }
+      const header = `번호,실행시각,모델,입력프로파일,임계값,예측확률,최종분류`;
+      const rows = appState.logs.map((r, i) =>
+        `${appState.logs.length - i},${r.time},${r.model === 'logistic' ? '로지스틱 회귀' : '의사결정 나무'},"${r.profile}",${r.threshold},${r.prob},${r.verdict}`
+      );
+      const csvContent = `\uFEFF${header}\n${rows.join('\n')}`;
+      if (window.notebookAppApi && typeof window.notebookAppApi.triggerFileDownload === 'function') {
+        window.notebookAppApi.triggerFileDownload({
+          content: csvContent,
+          contentType: 'text/csv',
+          encoding: 'UTF-8',
+          filename: 'ai_satisfaction_simulation_logs.csv'
+        });
+        if (msgEl) msgEl.textContent = `CSV 파일 내보내기가 요청되었습니다 (${appState.logs.length}건).`;
+      } else {
+        if (msgEl) msgEl.textContent = `파일 내보내기 기능을 사용할 수 없는 환경입니다.`;
+      }
+    }
+
+    function highlightValLeaf(leafKey) {
+      const detail = LEAF_DETAILS[leafKey];
+      if (!detail) return;
+      document.querySelectorAll('#val-tree-container .tree-node, #val-tree-container .tree-leaf').forEach((el) => {
+        el.classList.remove('is-path');
+      });
+      detail.nodes.forEach((nid) => {
+        const el = document.getElementById(nid);
+        if (el) el.classList.add('is-path');
+      });
+      const leafBtn = document.querySelector(`#val-tree-container [data-leaf="${leafKey}"]`);
+      if (leafBtn) leafBtn.classList.add('is-path');
+
+      const txt = document.getElementById('val-leaf-text');
+      if (txt) txt.textContent = detail.text;
+    }
+
+    async function initApp() {
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+
+      if (window.notebookAppApi && typeof window.notebookAppApi.getAppState === 'function') {
+        try {
+          const saved = await window.notebookAppApi.getAppState();
+          if (saved && typeof saved === 'object') {
+            if (saved.activeHub) appState.activeHub = saved.activeHub;
+            if (saved.activeView) appState.activeView = saved.activeView;
+            if (saved.activePreset) appState.activePreset = saved.activePreset;
+            if (saved.inputs) {
+              appState.inputs = {
+                gender: saved.inputs.gender || 'Female',
+                continent: saved.inputs.continent || 'North America',
+                grade: saved.inputs.grade || 'Low',
+                aiCount: typeof saved.inputs.aiCount === 'number' ? saved.inputs.aiCount : 2,
+                threshold: typeof saved.inputs.threshold === 'number' ? saved.inputs.threshold : 0.50
+              };
+            }
+            if (Array.isArray(saved.logs)) {
+              appState.logs = saved.logs;
+            }
+          }
+        } catch (err) {
+          /* fallback to defaults */
+        }
+      }
+
+      renderNavigation();
+      renderInputs();
+      renderSimulators();
+      renderLogs();
+      highlightValLeaf('R2');
+
+      if (window.notebookAppApi && typeof window.notebookAppApi.notifyAppReady === 'function') {
+        window.notebookAppApi.notifyAppReady();
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>
